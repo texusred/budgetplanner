@@ -24,6 +24,21 @@
             max-width: 1200px;
             margin: 0 auto;
         }
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            height: 40px; /* Adjust size as needed */
+            margin-right: 15px;
+        }
+
+        .header-container h1 {
+            margin: 0;
+        }
         .card {
             background: #fff;
             border-radius: 5px;
@@ -177,8 +192,10 @@
 </head>
 <body>
     <div class="container">
-        <img src="https://raw.githubusercontent.com/texusred/angliastudent/main/images/3815-ARUSU-Logo-cmyk.webp" alt="Logo">
+      <div class="header-container">
+        <img src="https://raw.githubusercontent.com/texusred/angliastudent/main/images/3815-ARUSU-Logo-cmyk.webp" alt="Logo" class="logo">
         <h1>Event Budget Planner</h1>
+      </div>
         
         <div class="tabs">
             <button class="tab-button active" onclick="openTab(event, 'setup')">Event Setup</button>
