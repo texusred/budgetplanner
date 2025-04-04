@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Budgeting Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container mt-5 main-container">
+        <h2 class="mb-4">Event Budgeting Tool</h2>
+        <div class="row">
+            <div class="col-md-12 mb-4 form-container">
+                <form id="expenseForm">
+                    <h4>Add Expense</h4>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="expenseName" class="form-label">Expense Name</label>
+                            <input type="text" class="form-control" id="expenseName" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="expenseCategory" class="form-label">Category</label>
+                            <select class="form-select" id="expenseCategory" required>
+                                <option value="">Select a category</option>
+                                <option value="Venue">Venue</option>
+                                <option value="Catering">Catering</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Staffing">Staffing</option>
+                                <option value="Equipment">Equipment</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Miscellaneous">Miscellaneous</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="expenseAmount" class="form-label">Amount (£)</label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="expenseAmount" required>
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Add Expense</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-4 form-container">
+                <form id="incomeForm">
+                    <h4>Add Income</h4>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="incomeName" class="form-label">Income Source</label>
+                            <input type="text" class="form-control" id="incomeName" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="incomeAmount" class="form-label">Amount (£)</label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="incomeAmount" required>
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100">Add Income</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-danger-subtle">
+                        <h4 class="mb-0 text-danger">Expenses</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Amount (£)</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expenseTable">
+                                    <!-- Expenses will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold">Total Expenses:</span>
+                            <span class="fw-bold text-danger" id="totalExpenses">£0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success-subtle">
+                        <h4 class="mb-0 text-success">Income</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Source</th>
+                                        <th>Amount (£)</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incomeTable">
+                                    <!-- Income will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold">Total Income:</span>
+                            <span class="fw-bold text-success" id="totalIncome">£0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary-subtle">
+                        <h4 class="mb-0 text-primary">Summary</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <th>Total Income:</th>
+                                        <td id="summaryIncome" class="text-success">£0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total Expenses:</th>
+                                        <td id="summaryExpenses" class="text-danger">£0.00</td>
+                                    </tr>
+                                    <tr class="fw-bold fs-5">
+                                        <th>Balance:</th>
+                                        <td id="balance">£0.00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-info-subtle">
+                        <h4 class="mb-0 text-info">Expense Breakdown by Category</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Amount (£)</th>
+                                        <th>Percentage of Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoryBreakdown">
+                                    <!-- Category breakdown will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-4 text-center">
+                <button id="resetButton" class="btn btn-warning">Reset Budget</button>
+                <button id="exportButton" class="btn btn-info ms-2">Export as CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
