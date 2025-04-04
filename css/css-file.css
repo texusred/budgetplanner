@@ -1,0 +1,30 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.main-container {
+    max-width: 1200px;
+}
+
+.form-container {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-delete {
+    color: #dc3545;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    color: #a71d2a;
+}
