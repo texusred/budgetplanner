@@ -1,3 +1,4 @@
+/* Base styles from original */
 body {
     background-color: #f8f9fa;
 }
@@ -27,4 +28,116 @@ body {
 
 .btn-delete:hover {
     color: #a71d2a;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 767.98px) {
+    /* Adjust container padding for smaller screens */
+    .main-container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    /* Form improvements for mobile */
+    .form-container {
+        padding: 15px;
+    }
+    
+    /* Ensure buttons have enough space when stacked */
+    .btn {
+        margin-bottom: 8px;
+    }
+    
+    /* Remove margin between adjacent buttons on mobile */
+    #exportButton {
+        margin-left: 0 !important;
+    }
+    
+    /* Display the table in a responsive, stacked format */
+    .table {
+        border: 0;
+    }
+    
+    .table thead {
+        border: none;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        width: 1px;
+    }
+    
+    .table tr {
+        border-bottom: 3px solid #ddd;
+        display: block;
+        margin-bottom: 0.625em;
+    }
+    
+    .table td {
+        border-bottom: 1px solid #ddd;
+        display: block;
+        font-size: 0.9em;
+        text-align: right;
+        padding: 0.625em;
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .table td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        text-align: left;
+        flex: 1;
+        padding-right: 10px;
+    }
+    
+    /* Make sure action buttons appear properly */
+    .table td[data-label="Action"] {
+        justify-content: flex-end;
+    }
+    
+    .table td[data-label="Action"]::before {
+        flex: none;
+        width: auto;
+    }
+    
+    /* Improve the summary table styling */
+    .table tbody th {
+        display: block;
+        text-align: left;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+        padding: 0.625em;
+        margin-top: 0;
+    }
+    
+    /* Ensure delete buttons are easily tappable */
+    .btn-delete {
+        padding: 8px;
+    }
+    
+    /* Make sure tables don't scroll horizontally */
+    .table-responsive {
+        overflow-x: visible;
+    }
+    
+    /* Special styling for sections with fixed tables */
+    .row > .col-md-12,
+    .row > .col-md-6 {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+    
+    /* Card adjustments for mobile */
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .card-header h4 {
+        font-size: 1.1rem;
+    }
 }

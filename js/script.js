@@ -48,10 +48,10 @@ function updateExpensesTable() {
     expenses.forEach((expense, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${expense.name}</td>
-            <td>${expense.category}</td>
-            <td>${formatCurrency(expense.amount)}</td>
-            <td>
+            <td data-label="Name">${expense.name}</td>
+            <td data-label="Category">${expense.category}</td>
+            <td data-label="Amount">${formatCurrency(expense.amount)}</td>
+            <td data-label="Action">
                 <button class="btn-delete" data-index="${index}">
                     <i class="bi bi-trash">❌</i>
                 </button>
@@ -78,9 +78,9 @@ function updateIncomeTable() {
     income.forEach((item, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${item.name}</td>
-            <td>${formatCurrency(item.amount)}</td>
-            <td>
+            <td data-label="Source">${item.name}</td>
+            <td data-label="Amount">${formatCurrency(item.amount)}</td>
+            <td data-label="Action">
                 <button class="btn-delete" data-index="${index}">
                     <i class="bi bi-trash">❌</i>
                 </button>
@@ -98,6 +98,36 @@ function updateIncomeTable() {
             updateUI();
         });
     });
+}
+
+// Update category breakdown
+function updateCategoryBreakdown() {
+    categoryBreakdownEl.innerHTML = '';
+    
+    const totalExpenseAmount = expenses.reduce((total, expense) => total + parseFloat(expense.amount), 0);
+    
+    // Group expenses by category
+    const categories = {};
+    expenses.forEach(expense => {
+        if (!categories[expense.category]) {
+            categories[expense.category] = 0;
+        }
+        categories[expense.category] += parseFloat(expense.amount);
+    });
+    
+    // Create rows for each category
+    for (const category in categories) {
+        const amount = categories[category];
+        const percentage = totalExpenseAmount ? ((amount / totalExpenseAmount) * 100).toFixed(1) : 0;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td data-label="Category">${category}</td>
+            <td data-label="Amount">${formatCurrency(amount)}</td>
+            <td data-label="Percentage">${percentage}%</td>
+        `;
+        categoryBreakdownEl.appendChild(row);
+    }
 }
 
 // Calculate totals and update summary
