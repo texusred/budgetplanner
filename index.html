@@ -4,27 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Event Budget Planner</title>
-    <!-- Add jsPDF for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-    <!-- Add js-cookie library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+    <!-- jsPDF for PDF export (deferred: only needed if the user exports, and shouldn't block initial render) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js" defer></script>
+
+    <!-- Atkinson Hyperlegible: Union's secondary/body typeface, free via Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!--
+        Area Inktrap: Union's primary/headline typeface, is distributed via Adobe Fonts
+        (fonts.adobe.com/fonts/area-inktrap) and needs your organisation's own Adobe Fonts
+        kit embed code to load — it can't be linked from a public CDN. Once you have your
+        kit ID, add it here, e.g.:
+        <script src="https://use.typekit.net/xxxxxxx.js"></script>
+        <script>try{Typekit.load({ async: true });}catch(e){}</script>
+        Until then, headings fall back to a bold system sans-serif (see --font-heading below).
+    -->
+
     <style>
+        :root {
+            /* Union brand palette (see Union Brand and Tone of Voice Guidelines v1.4) */
+            --union-green: #D7FB59;   /* Brilliant Green — primary */
+            --union-red: #EF3955;
+            --union-aqua: #7CF9CB;
+            --union-fuchsia: #EA46E5;
+            --union-blue: #83B0FF;
+            --union-orange: #F36D21;
+            --union-violet: #D4BAF9;
+            /* Dark navy used for text/logo on light and coloured backgrounds. Not given an
+               exact hex in the brand pack (only Brilliant Green + secondary palette have
+               documented values) — this is sampled from the guideline artwork. Swap in the
+               exact value if your team has one. */
+            --union-dark: #0B2027;
+            /* Every brand accent colour is light, so dark navy text is used on top of all
+               of them throughout (verified: 4.3:1–14.3:1 contrast, all pass WCAG AA). White
+               text on these colours fails contrast (as low as 1.2:1), which is also why the
+               brand guide itself always shows the logo in dark, not white, on colour. */
+            --font-heading: 'Area Inktrap', 'Poppins', 'Arial Black', sans-serif;
+            --font-body: 'Atkinson Hyperlegible', Arial, sans-serif;
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: var(--font-body);
             line-height: 1.6;
             margin: 0;
             padding: 20px;
-            color: #333;
+            color: var(--union-dark);
+            background: #fff;
         }
         h1, h2, h3 {
-            color: #2c3e50;
+            font-family: var(--font-heading);
+            color: var(--union-dark);
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
         }
         .header-container {
+            position: relative;
             display: flex;
             align-items: center;
             width: 100%;
@@ -34,6 +72,8 @@
 
         .logo {
             height: 40px; /* Adjust size as needed */
+            max-width: 200px;
+            object-fit: contain;
             margin-right: 15px;
         }       
 
@@ -42,12 +82,123 @@
             text-align: center;
             width: 100%;
         }
+        .settings-wrapper {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 50;
+        }
+        .settings-toggle {
+            background: transparent;
+            color: var(--union-dark);
+            border: 1px solid #ddd;
+            padding: 6px;
+            margin: 0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .settings-toggle:hover {
+            background: #f0f0f0;
+        }
+        .settings-toggle:focus-visible {
+            outline: 2px solid var(--union-dark);
+            outline-offset: 2px;
+        }
+        .settings-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            padding: 16px;
+            min-width: 280px;
+            max-width: calc(100vw - 40px);
+            text-align: left;
+        }
+        .settings-menu.open {
+            display: block;
+        }
+        .settings-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+        .settings-menu-header h2 {
+            margin: 0;
+            font-size: 1rem;
+        }
+        .settings-close {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            width: 28px;
+            height: 28px;
+            font-size: 1.4rem;
+            line-height: 1;
+            color: var(--union-dark);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .settings-close:hover {
+            background: #f0f0f0;
+        }
+        .settings-note {
+            margin: 0 0 14px 0;
+            padding: 8px 10px;
+            border-left: 3px solid var(--union-orange);
+            background: #fdf5ee;
+            font-size: 0.85em;
+            color: var(--union-dark);
+        }
+        .settings-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .settings-item + .settings-item {
+            margin-top: 12px;
+        }
+        .settings-item input[type="checkbox"] {
+            margin: 2px 0 0 0;
+            flex-shrink: 0;
+        }
         .card {
             background: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             padding: 20px;
             margin-bottom: 20px;
+        }
+        .card-dark {
+            background: var(--union-dark);
+            color: #fff;
+        }
+        .card-dark h2, .card-dark h3 {
+            color: var(--union-green);
+        }
+        .card-dark strong {
+            color: var(--union-green);
+        }
+        .card-highlight {
+            background: var(--union-green);
+            color: var(--union-dark);
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .card-highlight h3 {
+            color: var(--union-dark);
+            margin-top: 0;
         }
         table {
             width: 100%;
@@ -60,7 +211,9 @@
             text-align: left;
         }
         th {
-            background-color: #f8f9fa;
+            background-color: var(--union-green);
+            color: var(--union-dark);
+            font-family: var(--font-heading);
         }
         input {
             width: 100%;
@@ -69,9 +222,18 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+        input[type="checkbox"], input[type="radio"] {
+            /* Slightly larger than the browser default so it's an easier tap target on mobile */
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            vertical-align: middle;
+        }
         button {
-            background-color: #4CAF50;
-            color: white;
+            background-color: var(--union-green);
+            color: var(--union-dark);
+            font-family: var(--font-body);
+            font-weight: 700;
             padding: 10px 15px;
             border: none;
             border-radius: 4px;
@@ -79,24 +241,30 @@
             margin-right: 5px;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #c3e64c; /* Brilliant Green, darkened ~10% for hover feedback */
         }
         .delete-btn {
-            background-color: #f44336;
+            background-color: var(--union-red);
+            color: var(--union-dark);
         }
         .delete-btn:hover {
-            background-color: #d32f2f;
+            background-color: #d42f49;
         }
         .summary-table {
-            background-color: #f8f9fa;
+            background-color: #fff;
+        }
+        .positive, .negative {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            color: var(--union-dark);
         }
         .positive {
-            color: green;
-            font-weight: bold;
+            background-color: var(--union-aqua);
         }
         .negative {
-            color: red;
-            font-weight: bold;
+            background-color: var(--union-red);
         }
         .ticket-scenarios {
             display: flex;
@@ -106,11 +274,15 @@
             margin-right: 15px;
         }
         .attendance-row {
-            background-color: #e9f7ef;
+            background-color: #fff;
         }
         .total-row {
-            background-color: #eaf2f8;
+            background-color: var(--union-dark);
+            color: #fff;
             font-weight: bold;
+        }
+        .total-row td {
+            border-color: var(--union-dark);
         }
         .tabs {
             overflow: hidden;
@@ -127,14 +299,16 @@
             padding: 14px 16px;
             transition: 0.3s;
             margin: 0;
-            color: black;
+            font-family: var(--font-body);
+            font-weight: 700;
+            color: var(--union-dark);
         }
         .tab-button:hover {
-            background-color: #ddd;
+            background-color: #e4e4e4;
         }
         .tab-button.active {
-            background-color: #4CAF50;
-            color: white;
+            background-color: var(--union-green);
+            color: var(--union-dark);
         }
         .tab-content {
             display: none;
@@ -149,8 +323,20 @@
             to {opacity: 1;}
         }
         .chart-container {
+            position: relative;
+            width: 100%;
             height: 300px;
             margin-top: 20px;
+        }
+        .chart-container canvas {
+            /* Canvas defaults to a fixed 300px intrinsic width until Chart.js's JS
+               finishes initializing and resizes it — without this, that default can
+               overflow the page horizontally on narrow screens before/without JS
+               having run. Chart.js sets its own inline style once it loads, which
+               takes precedence over this. */
+            width: 100% !important;
+            max-width: 100%;
+            display: block;
         }
         .action-buttons {
             display: flex;
@@ -158,33 +344,59 @@
             margin-top: 20px;
         }
         .save-btn {
-            background-color: #2196F3;
+            background-color: var(--union-blue);
+            color: var(--union-dark);
         }
         .save-btn:hover {
-            background-color: #0b7dda;
+            background-color: #6a9cff;
         }
         .load-btn {
-            background-color: #ff9800;
+            background-color: var(--union-orange);
+            color: var(--union-dark);
         }
         .load-btn:hover {
-            background-color: #e68a00;
+            background-color: #da5f1a;
         }
         .export-btn {
-            background-color: #9c27b0;
+            background-color: var(--union-fuchsia);
+            color: var(--union-dark);
         }
         .export-btn:hover {
-            background-color: #7b1fa2;
+            background-color: #d13ecf;
         }
+        .validation-message {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 4px;
+            background: #f4f4f4;
+            font-weight: 700;
+        }
+        .validation-message.valid { background: var(--union-aqua); }
+        .validation-message.warning { background: var(--union-orange); }
+        .validation-message.error { background: var(--union-red); }
+        .scenario-help, .break-even-help { margin-top: 0; font-size: 0.95em; }
+
         .notification {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: #333;
+            background: var(--union-dark);
             color: white;
             padding: 10px 20px;
             border-radius: 4px;
             display: none;
             z-index: 100;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
         @media print {
             button, .no-print {
@@ -226,7 +438,7 @@
     }
     
     /* Table adjustments for mobile */
-    table, thead, tbody, th, td, tr {
+    table, thead, tbody, tfoot, th, td, tr {
         display: block;
     }
     
@@ -267,6 +479,17 @@
     #incomeTable td:nth-of-type(3):before { content: "Notes:"; }
     #incomeTable td:nth-of-type(4):before { content: "Actions:"; }
     
+    /* The totals row has a different shape (just a label + one amount) from the data
+       rows above it, so it doesn't need — and shouldn't get — the same per-column
+       labels; its own text is already self-descriptive ("Total Other Income"). */
+    #incomeTable tfoot td:before {
+        content: none !important;
+    }
+    #incomeTable tfoot td {
+        padding-left: 10px;
+        font-weight: bold;
+    }
+    
     #expenseTable td:nth-of-type(1):before { content: "Category:"; }
     #expenseTable td:nth-of-type(2):before { content: "Expense Item:"; }
     #expenseTable td:nth-of-type(3):before { content: "Fixed Amount:"; }
@@ -274,36 +497,39 @@
     #expenseTable td:nth-of-type(5):before { content: "Notes:"; }
     #expenseTable td:nth-of-type(6):before { content: "Actions:"; }
     
-    /* Exception for summary tables which should stay as is */
-    .summary-table th, 
-    .summary-table td,
-    #ticketIncomeTable th,
-    #ticketIncomeTable td,
-    #expenseProjectionTable th,
-    #expenseProjectionTable td {
-        display: table-cell;
-        padding: 5px;
-        font-size: 0.8rem;
+    /* The summary, ticket income, and expense projection tables use the same
+       stacked-card layout as the other tables, rather than requiring horizontal
+       scrolling to compare scenarios. Their first column (category/ticket name) is
+       already self-descriptive, so it gets no generated label. Their scenario
+       columns use data-label too, but as a label ABOVE the value rather than beside
+       it (unlike the other tables' short labels e.g. "Price (£):") — "Scenario 1
+       (50%)" is long enough, and the percentage long enough to vary in digit count,
+       that the fixed-width side-by-side technique isn't reliably wide enough and can
+       overlap the value. Stacking avoids that regardless of label length. */
+    .summary-table td:nth-of-type(1),
+    #ticketIncomeTable td:nth-of-type(1),
+    #expenseProjectionTable td:nth-of-type(1) {
+        padding-left: 10px;
+        font-weight: bold;
     }
-    
-    .summary-table,
-    #ticketIncomeTable,
-    #expenseProjectionTable {
-        display: table;
-        width: 100%;
-        overflow-x: auto;
+    .summary-table td:nth-of-type(n+2),
+    #ticketIncomeTable td:nth-of-type(n+2),
+    #expenseProjectionTable td:nth-of-type(n+2) {
+        padding-left: 10px;
     }
-    
-    /* Make summary tables scrollable horizontally */
-    .summary-table-wrapper,
-    .income-projection-wrapper,
-    .expense-projection-wrapper {
-        width: 100%;
-        overflow-x: auto;
+    .summary-table td:nth-of-type(n+2):before,
+    #ticketIncomeTable td:nth-of-type(n+2):before,
+    #expenseProjectionTable td:nth-of-type(n+2):before {
+        content: attr(data-label);
+        display: block;
+        position: static;
+        width: auto;
+        white-space: normal;
+        margin-bottom: 2px;
     }
     
     /* Form controls adjustments */
-    input, select, button {
+    input:not([type="checkbox"]):not([type="radio"]), select, button {
         font-size: 16px; /* Prevents zoom on iOS */
         padding: 10px 8px; /* Larger touch targets */
     }
@@ -340,20 +566,49 @@
 <body>
     <div class="container">
       <div class="header-container">
-        <img src="https://www.angliastudent.com/stylesheet/Starlings/cambridge-union-logo-green.svg" alt="Logo" class="logo">
+        <img src="https://arunion.co.uk/stylesheet/one-union/union-logo-black-cropped.png" alt="Union logo" class="logo">
         <h1>Society Event Budgeting Planner</h1>
+        <div class="settings-wrapper">
+            <button type="button" id="settingsToggle" class="settings-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsMenu" aria-label="Settings" onclick="toggleSettingsMenu(event)">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.03 7.03 0 00-1.63-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 00-.6.22L2.65 8.84a.5.5 0 00.12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 00-.12.64l1.92 3.32c.14.24.42.32.6.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.24.1.47 0 .6-.22l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z"/>
+                </svg>
+            </button>
+            <div id="settingsMenu" class="settings-menu" role="dialog" aria-label="Settings" aria-labelledby="settingsMenuHeading" hidden>
+                <div class="settings-menu-header">
+                    <h2 id="settingsMenuHeading">Settings</h2>
+                    <button type="button" class="settings-close" aria-label="Close settings" onclick="closeSettingsMenu()">&times;</button>
+                </div>
+                <p class="settings-note">Only change these settings if a Union staff member has advised you to — this keeps your calculations correct.</p>
+                <label class="settings-item"><input type="checkbox" id="pricesIncludeVAT" checked onchange="onVatSettingChange()"> Ticket prices include VAT (20%)</label>
+                <label class="settings-item"><input type="checkbox" id="applyTransactionFee" onchange="onTransactionFeeSettingChange()"> Transaction fee for non-student ticketed events (20p/ticket)</label>
+            </div>
+        </div>
       </div>
         
-        <div class="tabs">
-            <button class="tab-button active" onclick="openTab(event, 'setup')">Event Details</button>
-            <button class="tab-button" onclick="openTab(event, 'tickets')">Ticket Types</button>
-            <button class="tab-button" onclick="openTab(event, 'income')">Other Income</button>
-            <button class="tab-button" onclick="openTab(event, 'expenses')">Expenses</button>
-            <button class="tab-button" onclick="openTab(event, 'summary')">Summary</button>
+        <div class="tabs" role="tablist" aria-label="Event budget sections">
+            <button class="tab-button active" id="tab-setup" role="tab" aria-selected="true" aria-controls="setup" tabindex="0" onclick="openTab(event, 'setup')">Event Details</button>
+            <button class="tab-button" id="tab-tickets" role="tab" aria-selected="false" aria-controls="tickets" tabindex="-1" onclick="openTab(event, 'tickets')">Ticket Types</button>
+            <button class="tab-button" id="tab-income" role="tab" aria-selected="false" aria-controls="income" tabindex="-1" onclick="openTab(event, 'income')">Other Income</button>
+            <button class="tab-button" id="tab-expenses" role="tab" aria-selected="false" aria-controls="expenses" tabindex="-1" onclick="openTab(event, 'expenses')">Expenses</button>
+            <button class="tab-button" id="tab-summary" role="tab" aria-selected="false" aria-controls="summary" tabindex="-1" onclick="openTab(event, 'summary')">Summary</button>
         </div>
         
         <!-- Event Details Tab -->
-        <div id="setup" class="tab-content" style="display: block;">
+        <div id="setup" class="tab-content" style="display: block;" role="tabpanel" aria-labelledby="tab-setup" tabindex="0">
+            <div class="card card-dark">
+                <h2>About this planner</h2>
+                <p>This tool helps clubs and societies budget for events, from small get-togethers to large-scale socials. Add your ticket prices, expected costs and attendance scenarios, and we'll work out your income, costs and break-even point for you.</p>
+                <p>Once you're happy with your numbers, export your budget as a PDF and send it to your coordinator. It gives us everything we need to support your event planning.</p>
+                <p><strong>What's on each tab:</strong></p>
+                <ul>
+                    <li><strong>Event Details</strong> — Your event name, date, capacity and attendance scenarios</li>
+                    <li><strong>Ticket Types</strong> — Each ticket you're selling, its price and expected share of attendees</li>
+                    <li><strong>Other Income</strong> — Income beyond ticket sales, like sponsorship or grants</li>
+                    <li><strong>Expenses</strong> — Your costs, split into fixed and per-person amounts</li>
+                    <li><strong>Summary</strong> — Your full budget across all four scenarios, with a break-even calculation and chart</li>
+                </ul>
+            </div>
             <div class="card">
                 <h2>Event Details</h2>
                 <table>
@@ -372,6 +627,7 @@
                 </table>
                 
                 <h3>Attendance Scenarios</h3>
+                <p class="scenario-help">Set four attendance assumptions. These percentages are applied to maximum capacity.</p>
                 <div class="ticket-scenarios">
                     <div class="scenario-control">
                         <label for="scenario1">Scenario 1:</label>
@@ -390,7 +646,7 @@
                         <input type="number" id="scenario4" value="100" min="1" max="100"> %
                     </div>
                 </div>
-                <button onclick="saveEventDetails()">Save Event Details</button>
+                <button onclick="saveEventDetails()">Apply Attendance Scenarios</button>
             </div>
         <!--Save and load to local storage-->
             <div class="card">
@@ -407,12 +663,13 @@
         </div>
         
         <!-- Ticket Types Tab -->
-        <div id="tickets" class="tab-content">
+        <div id="tickets" class="tab-content" role="tabpanel" aria-labelledby="tab-tickets" tabindex="0">
             <div class="card">
                 <h2>Ticket Types</h2>
                 <div style="margin-bottom: 15px;">
-                    <label><input type="checkbox" id="pricesIncludeVAT" checked> Ticket prices include VAT (20%)</label>
-                    <p style="margin-top: 5px; color: #666; font-size: 0.9em;">Note: A transaction fee of 20p will be automatically applied per ticket sold</p>
+                    <p style="margin: 0; font-size: 0.9em;">All ticket prices will include VAT set at 20%. Value Added Tax (VAT) is a tax charged on most goods and services, and is collected on behalf of the UK Government, and paid to HM Revenue and Customs (HMRC).</p>
+                    <p style="margin-top: 5px; font-size: 0.9em;">No transaction fees are applied to student-only events. If your event includes non-student attendees, please enable transaction fees through the settings menu.</p>
+                    <div id="ticketAllocationStatus" class="validation-message" role="status" aria-live="polite"></div>
                 </div>
                 <table id="ticketTable">
                     <thead>
@@ -425,10 +682,10 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><input type="text" placeholder="e.g. Early Bird" value="Standard Ticket"></td>
-                            <td><input type="number" value="25.00" step="0.01" min="0"></td>
-                            <td><input type="number" value="100" min="0" max="100"></td>
-                            <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+                            <td><input type="text" placeholder="e.g. Early Bird" value="Standard Ticket" aria-label="Ticket name"></td>
+                            <td><input type="number" value="25.00" step="0.01" min="0" aria-label="Ticket price in pounds"></td>
+                            <td><input type="number" value="100" min="0" max="100" aria-label="Expected percentage of attendees"></td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete Standard Ticket">Delete</button></td>
                         </tr>
                     </tbody>
                 </table>
@@ -467,7 +724,7 @@
         </div>
         
         <!-- Other Income Tab -->
-        <div id="income" class="tab-content">
+        <div id="income" class="tab-content" role="tabpanel" aria-labelledby="tab-income" tabindex="0">
             <div class="card">
                 <h2>Other Income Sources</h2>
                 <table id="incomeTable">
@@ -481,10 +738,10 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><input type="text" placeholder="e.g. Sponsorship" value="Sponsorship"></td>
-                            <td><input type="number" value="500.00" step="0.01" min="0"></td>
-                            <td><input type="text" placeholder="Additional details"></td>
-                            <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+                            <td><input type="text" placeholder="e.g. Sponsorship" value="Sponsorship" aria-label="Income source"></td>
+                            <td><input type="number" value="500.00" step="0.01" min="0" aria-label="Income amount in pounds"></td>
+                            <td><input type="text" placeholder="Additional details" aria-label="Income notes"></td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete Sponsorship">Delete</button></td>
                         </tr>
                     </tbody>
                     <tfoot>
@@ -501,7 +758,7 @@
         </div>
         
         <!-- Expenses Tab -->
-        <div id="expenses" class="tab-content">
+        <div id="expenses" class="tab-content" role="tabpanel" aria-labelledby="tab-expenses" tabindex="0">
             <div class="card">
                 <h2>Expenses</h2>
                 <table id="expenseTable">
@@ -518,7 +775,7 @@
                     <tbody>
                         <tr>
                             <td>
-                                <select>
+                                <select aria-label="Expense category">
                                     <option>Venue</option>
                                     <option>Catering</option>
                                     <option>Marketing</option>
@@ -530,15 +787,15 @@
                                     <option>Other</option>
                                 </select>
                             </td>
-                            <td><input type="text" placeholder="e.g. Venue Hire" value="Venue Hire"></td>
-                            <td><input type="number" value="1000.00" step="0.01" min="0"></td>
-                            <td><input type="number" value="0.00" step="0.01" min="0"></td>
-                            <td><input type="text" placeholder="Additional details"></td>
-                            <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+                            <td><input type="text" placeholder="e.g. Venue Hire" value="Venue Hire" aria-label="Expense item"></td>
+                            <td><input type="number" value="1000.00" step="0.01" min="0" aria-label="Fixed amount in pounds"></td>
+                            <td><input type="number" value="0.00" step="0.01" min="0" aria-label="Per person amount in pounds"></td>
+                            <td><input type="text" placeholder="Additional details" aria-label="Expense notes"></td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete Venue Hire">Delete</button></td>
                         </tr>
                         <tr>
                             <td>
-                                <select>
+                                <select aria-label="Expense category">
                                     <option>Venue</option>
                                     <option selected>Catering</option>
                                     <option>Marketing</option>
@@ -550,11 +807,11 @@
                                     <option>Other</option>
                                 </select>
                             </td>
-                            <td><input type="text" placeholder="e.g. Food" value="Food"></td>
-                            <td><input type="number" value="0.00" step="0.01" min="0"></td>
-                            <td><input type="number" value="15.00" step="0.01" min="0"></td>
-                            <td><input type="text" placeholder="Per person cost"></td>
-                            <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+                            <td><input type="text" placeholder="e.g. Food" value="Food" aria-label="Expense item"></td>
+                            <td><input type="number" value="0.00" step="0.01" min="0" aria-label="Fixed amount in pounds"></td>
+                            <td><input type="number" value="15.00" step="0.01" min="0" aria-label="Per person amount in pounds"></td>
+                            <td><input type="text" placeholder="Per person cost" aria-label="Expense notes"></td>
+                            <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete Food">Delete</button></td>
                         </tr>
                     </tbody>
                 </table>
@@ -593,7 +850,7 @@
         </div>
         
         <!-- Summary Tab -->
-        <div id="summary" class="tab-content">
+        <div id="summary" class="tab-content" role="tabpanel" aria-labelledby="tab-summary" tabindex="0">
             <div class="card">
                 <h2>Budget Summary</h2>
                 <div class="summary-table-wrapper">
@@ -616,7 +873,7 @@
                             <td id="summaryGrossTicketScenario4">£0.00</td>
                         </tr>
                         <tr>
-                            <td>Less Transaction Fees (20p/ticket)</td>
+                            <td id="summaryTransactionFeeLabel">Less Transaction Fees</td>
                             <td id="summaryTransactionFeesScenario1">£0.00</td>
                             <td id="summaryTransactionFeesScenario2">£0.00</td>
                             <td id="summaryTransactionFeesScenario3">£0.00</td>
@@ -668,11 +925,19 @@
                 </table>
             </div>
                 
-                <h3>Break-Even Analysis</h3>
-                <div id="breakEvenAnalysis">
-                    <p>Based on your fixed costs and per-person variable costs:</p>
-                    <p id="breakEvenPoint">You need to sell <strong>0</strong> tickets to break even.</p>
-                    <p id="breakEvenRevenue">This represents <strong>£0.00</strong> in revenue.</p>
+                <h3>Income, Expenses and Profit by Scenario</h3>
+                <div class="chart-container">
+                    <canvas id="summaryChart" role="img" aria-label="Bar chart comparing income, expenses and profit across the four attendance scenarios"></canvas>
+                </div>
+
+                <div class="card-highlight">
+                    <h3>Break-Even Analysis</h3>
+                    <p class="break-even-help">This uses your ticket mix, costs, other income, and your VAT and transaction fee settings.</p>
+                    <div id="breakEvenAnalysis">
+                        <p>Based on your fixed costs and per-person variable costs:</p>
+                        <p id="breakEvenPoint">You need to sell <strong>0</strong> tickets to break even.</p>
+                        <p id="breakEvenRevenue">This represents <strong>£0.00</strong> in revenue.</p>
+                    </div>
                 </div>
                 
                 <div class="action-buttons">
@@ -684,10 +949,95 @@
         </div>
     </div>
     
-    <div id="notification" class="notification"></div>
+    <div id="notification" class="notification" role="status" aria-live="polite"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <script>
+        // Settings menu (cog icon in the header)
+        function toggleSettingsMenu(evt) {
+            if (evt) evt.stopPropagation();
+            const menu = document.getElementById("settingsMenu");
+            if (menu.classList.contains("open")) {
+                closeSettingsMenu();
+            } else {
+                openSettingsMenu();
+            }
+        }
+
+        function openSettingsMenu() {
+            const btn = document.getElementById("settingsToggle");
+            const menu = document.getElementById("settingsMenu");
+            menu.classList.add("open");
+            menu.hidden = false;
+            btn.setAttribute("aria-expanded", "true");
+            const firstField = menu.querySelector('input, select') || menu.querySelector('button:not(.settings-close)');
+            if (firstField) firstField.focus();
+            // Close on click outside or Escape. Attached only while open, so we're not
+            // running a global listener for the entire page lifetime. Deferred by a
+            // tick so the click that opened the menu (which may originate from outside
+            // .settings-wrapper, e.g. the "Change in Settings" link) doesn't itself get
+            // treated as an outside click and immediately close what it just opened.
+            setTimeout(() => {
+                document.addEventListener("click", handleSettingsOutsideClick);
+            }, 0);
+            document.addEventListener("keydown", handleSettingsKeydown);
+        }
+
+        function closeSettingsMenu() {
+            const btn = document.getElementById("settingsToggle");
+            const menu = document.getElementById("settingsMenu");
+            if (!menu.classList.contains("open")) return;
+            menu.classList.remove("open");
+            menu.hidden = true;
+            btn.setAttribute("aria-expanded", "false");
+            document.removeEventListener("click", handleSettingsOutsideClick);
+            document.removeEventListener("keydown", handleSettingsKeydown);
+        }
+
+        function handleSettingsOutsideClick(evt) {
+            const wrapper = document.querySelector(".settings-wrapper");
+            if (wrapper && !wrapper.contains(evt.target)) {
+                closeSettingsMenu();
+            }
+        }
+
+        function handleSettingsKeydown(evt) {
+            if (evt.key === "Escape") {
+                closeSettingsMenu();
+                document.getElementById("settingsToggle").focus();
+            }
+        }
+
+        // Recalculates everything that depends on the VAT setting, and refreshes
+        // break-even and the chart too — not just ticket income — since the cog icon
+        // is reachable from every tab and the Summary tab may already be open.
+        function onVatSettingChange() {
+            calculateTicketIncome();
+            calculateExpenses();
+            updateChart();
+        }
+
+        // Same pattern for the transaction fee setting: off by default, opt-in for
+        // events with non-student ticketing where a fee applies.
+        function onTransactionFeeSettingChange() {
+            calculateTicketIncome();
+            calculateExpenses();
+            updateChart();
+        }
+
+        // Escapes user-supplied text before it's interpolated into innerHTML strings.
+        // Needed anywhere ticket names, income sources, expense items, or notes are
+        // re-rendered, since those values round-trip through localStorage and could
+        // contain characters that break out of an attribute or tag context.
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
         // Tab functionality
         function openTab(evt, tabName) {
             var i, tabcontent, tabbuttons;
@@ -698,15 +1048,19 @@
                 tabcontent[i].style.display = "none";
             }
             
-            // Remove the "active" class from all tab buttons
+            // Remove the "active" state from all tab buttons
             tabbuttons = document.getElementsByClassName("tab-button");
             for (i = 0; i < tabbuttons.length; i++) {
                 tabbuttons[i].className = tabbuttons[i].className.replace(" active", "");
+                tabbuttons[i].setAttribute("aria-selected", "false");
+                tabbuttons[i].tabIndex = -1;
             }
             
-            // Show the current tab and add an "active" class to the button that opened the tab
+            // Show the current tab and mark its button as active/selected
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";
+            evt.currentTarget.setAttribute("aria-selected", "true");
+            evt.currentTarget.tabIndex = 0;
             
             // If summary tab is opened, update all calculations
             if (tabName === "summary") {
@@ -716,6 +1070,30 @@
                 updateSummary();
                 updateChart();
             }
+        }
+        
+        // Arrow-key navigation between tabs, per the WAI-ARIA tabs pattern
+        function initTabKeyboardNav() {
+            const tabButtons = Array.from(document.querySelectorAll('.tab-button'));
+            tabButtons.forEach((button, index) => {
+                button.addEventListener('keydown', function(evt) {
+                    let newIndex = null;
+                    if (evt.key === 'ArrowRight') {
+                        newIndex = (index + 1) % tabButtons.length;
+                    } else if (evt.key === 'ArrowLeft') {
+                        newIndex = (index - 1 + tabButtons.length) % tabButtons.length;
+                    } else if (evt.key === 'Home') {
+                        newIndex = 0;
+                    } else if (evt.key === 'End') {
+                        newIndex = tabButtons.length - 1;
+                    }
+                    if (newIndex !== null) {
+                        evt.preventDefault();
+                        tabButtons[newIndex].focus();
+                        tabButtons[newIndex].click();
+                    }
+                });
+            });
         }
         
         // Event details functions
@@ -742,35 +1120,111 @@
             document.getElementById("sumScenario3Header").textContent = `Scenario 3 (${scenario3}%)`;
             document.getElementById("sumScenario4Header").textContent = `Scenario 4 (${scenario4}%)`;
             
-            showNotification("Event details saved successfully!");
+            updateScenarioColumnLabels();
+            showNotification("Attendance scenarios applied!");
         }
         
+        // On mobile, the summary table's rows stack instead of scrolling sideways, and
+        // each scenario value is prefixed with a label (e.g. "Scenario 1 (50%): £1,250")
+        // instead of relying on a column header. This keeps those labels in sync with
+        // whatever attendance percentages the user has actually set. The summary
+        // table's rows are populated by several different functions (ticket income,
+        // other income, expenses, summary totals), so this is centralised here rather
+        // than repeated in each of them.
+        function updateScenarioColumnLabels() {
+            const labels = [
+                document.getElementById("scenario1Header").textContent,
+                document.getElementById("scenario2Header").textContent,
+                document.getElementById("scenario3Header").textContent,
+                document.getElementById("scenario4Header").textContent
+            ];
+            document.querySelectorAll('.summary-table tbody tr').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                for (let i = 1; i < cells.length && i <= 4; i++) {
+                    cells[i].dataset.label = labels[i - 1];
+                }
+            });
+        }
+        
+        // Ticket allocation validation
+        function updateTicketAllocationStatus() {
+            const ticketTable = document.getElementById("ticketTable");
+            const status = document.getElementById("ticketAllocationStatus");
+            if (!ticketTable || !status) return;
+            const rows = ticketTable.getElementsByTagName("tbody")[0].rows;
+            let total = 0;
+            for (let i = 0; i < rows.length; i++) {
+                const input = rows[i].cells[2]?.querySelector("input");
+                const value = input ? parseFloat(input.value) : 0;
+                total += Number.isFinite(value) ? value : 0;
+            }
+            total = Math.round(total * 100) / 100;
+            status.className = "validation-message";
+            if (Math.abs(total - 100) < 0.001) {
+                status.classList.add("valid");
+                status.textContent = `Ticket allocation: ${total}% — complete.`;
+            } else if (total < 100) {
+                status.classList.add("warning");
+                status.textContent = `Ticket allocation: ${total}% — ${Math.round((100 - total) * 100) / 100}% of attendees is unallocated.`;
+            } else {
+                status.classList.add("error");
+                status.textContent = `Ticket allocation: ${total}% — exceeds 100%. Your projected ticket numbers may exceed event capacity.`;
+            }
+        }
+
+        function attachTicketAllocationListeners() {
+            const ticketTable = document.getElementById("ticketTable");
+            if (!ticketTable) return;
+            ticketTable.querySelectorAll('tbody tr').forEach(row => {
+                const percentageInput = row.cells[2]?.querySelector('input');
+                if (percentageInput && !percentageInput.dataset.allocationListener) {
+                    percentageInput.dataset.allocationListener = "true";
+                    percentageInput.addEventListener('input', updateTicketAllocationStatus);
+                    percentageInput.addEventListener('change', updateTicketAllocationStatus);
+                }
+            });
+            updateTicketAllocationStatus();
+        }
+
         // Ticket functions
         function addTicketType() {
             const ticketTable = document.getElementById("ticketTable").getElementsByTagName('tbody')[0];
             const newRow = ticketTable.insertRow();
             
             newRow.innerHTML = `
-                <td><input type="text" placeholder="e.g. VIP Ticket"></td>
-                <td><input type="number" value="0.00" step="0.01" min="0"></td>
-                <td><input type="number" value="0" min="0" max="100"></td>
-                <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+                <td><input type="text" placeholder="e.g. VIP Ticket" aria-label="Ticket name"></td>
+                <td><input type="number" value="0.00" step="0.01" min="0" aria-label="Ticket price in pounds"></td>
+                <td><input type="number" value="0" min="0" max="100" aria-label="Expected percentage of attendees"></td>
+                <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete this ticket type">Delete</button></td>
             `;
+            attachTicketAllocationListeners();
         }
         
         function calculateTicketIncome() {
+            updateTicketAllocationStatus();
             const ticketTable = document.getElementById("ticketTable").getElementsByTagName('tbody')[0];
             const ticketIncomeTable = document.getElementById("ticketIncomeTable").getElementsByTagName('tbody')[0];
             const maxCapacity = parseFloat(document.getElementById("maxCapacity").value) || 100;
             const pricesIncludeVAT = document.getElementById("pricesIncludeVAT").checked;
+            const applyTransactionFee = document.getElementById("applyTransactionFee").checked;
             const VAT_RATE = 0.20; // 20% VAT
-            const TRANSACTION_FEE = 0.20; // 20p per ticket
+            const TRANSACTION_FEE = applyTransactionFee ? 0.20 : 0; // 20p per ticket, opt-in via Settings
             
             // Get scenario percentages
             const scenario1 = parseFloat(document.getElementById("scenario1").value) / 100 || 0.5;
             const scenario2 = parseFloat(document.getElementById("scenario2").value) / 100 || 0.7;
             const scenario3 = parseFloat(document.getElementById("scenario3").value) / 100 || 0.9;
             const scenario4 = parseFloat(document.getElementById("scenario4").value) / 100 || 1.0;
+            
+            // Scenario column labels, used as data-label attributes so mobile can show
+            // "Scenario 1 (50%): £X" per value instead of requiring horizontal scrolling
+            // through a wide table — kept in sync with whatever the user has set.
+            const scenarioLabels = [
+                document.getElementById("scenario1Header").textContent,
+                document.getElementById("scenario2Header").textContent,
+                document.getElementById("scenario3Header").textContent,
+                document.getElementById("scenario4Header").textContent
+            ];
             
             // Clear previous calculations
             ticketIncomeTable.innerHTML = "";
@@ -820,11 +1274,11 @@
                 // Create a new row in the ticket income table
                 const newRow = ticketIncomeTable.insertRow();
                 newRow.innerHTML = `
-                    <td>${ticketName} (${ticketPercentage * 100}% of attendees)</td>
-                    <td>£${scenario1Income.toFixed(2)} (${scenario1Tickets} tickets)</td>
-                    <td>£${scenario2Income.toFixed(2)} (${scenario2Tickets} tickets)</td>
-                    <td>£${scenario3Income.toFixed(2)} (${scenario3Tickets} tickets)</td>
-                    <td>£${scenario4Income.toFixed(2)} (${scenario4Tickets} tickets)</td>
+                    <td>${escapeHtml(ticketName)} (${ticketPercentage * 100}% of attendees)</td>
+                    <td data-label="${escapeHtml(scenarioLabels[0])}">£${scenario1Income.toFixed(2)} (${scenario1Tickets} tickets)</td>
+                    <td data-label="${escapeHtml(scenarioLabels[1])}">£${scenario2Income.toFixed(2)} (${scenario2Tickets} tickets)</td>
+                    <td data-label="${escapeHtml(scenarioLabels[2])}">£${scenario3Income.toFixed(2)} (${scenario3Tickets} tickets)</td>
+                    <td data-label="${escapeHtml(scenarioLabels[3])}">£${scenario4Income.toFixed(2)} (${scenario4Tickets} tickets)</td>
                 `;
             }
             
@@ -864,22 +1318,24 @@ const netScenario3 = afterTransactionFee3 - vatScenario3;
 const netScenario4 = afterTransactionFee4 - vatScenario4;
             
             // Add VAT and transaction fee rows to the ticket income table
+const transactionFeeLabel = applyTransactionFee ? "Less Transaction Fees (20p/ticket)" : "Less Transaction Fees (not applied)";
 const transactionRow = ticketIncomeTable.insertRow();
 transactionRow.innerHTML = `
-    <td><strong>Less Transaction Fees (20p/ticket)</strong></td>
-    <td>-£${transactionFeeScenario1.toFixed(2)} (${totalTicketsScenario1} tickets)</td>
-    <td>-£${transactionFeeScenario2.toFixed(2)} (${totalTicketsScenario2} tickets)</td>
-    <td>-£${transactionFeeScenario3.toFixed(2)} (${totalTicketsScenario3} tickets)</td>
-    <td>-£${transactionFeeScenario4.toFixed(2)} (${totalTicketsScenario4} tickets)</td>
+    <td><strong>${transactionFeeLabel}</strong></td>
+    <td data-label="${escapeHtml(scenarioLabels[0])}">-£${transactionFeeScenario1.toFixed(2)} (${totalTicketsScenario1} tickets)</td>
+    <td data-label="${escapeHtml(scenarioLabels[1])}">-£${transactionFeeScenario2.toFixed(2)} (${totalTicketsScenario2} tickets)</td>
+    <td data-label="${escapeHtml(scenarioLabels[2])}">-£${transactionFeeScenario3.toFixed(2)} (${totalTicketsScenario3} tickets)</td>
+    <td data-label="${escapeHtml(scenarioLabels[3])}">-£${transactionFeeScenario4.toFixed(2)} (${totalTicketsScenario4} tickets)</td>
 `;
+document.getElementById("summaryTransactionFeeLabel").textContent = transactionFeeLabel;
 
 const vatRow = ticketIncomeTable.insertRow();
 vatRow.innerHTML = `
     <td><strong>Less VAT (20%)</strong></td>
-    <td>-£${vatScenario1.toFixed(2)}</td>
-    <td>-£${vatScenario2.toFixed(2)}</td>
-    <td>-£${vatScenario3.toFixed(2)}</td>
-    <td>-£${vatScenario4.toFixed(2)}</td>
+    <td data-label="${escapeHtml(scenarioLabels[0])}">-£${vatScenario1.toFixed(2)}</td>
+    <td data-label="${escapeHtml(scenarioLabels[1])}">-£${vatScenario2.toFixed(2)}</td>
+    <td data-label="${escapeHtml(scenarioLabels[2])}">-£${vatScenario3.toFixed(2)}</td>
+    <td data-label="${escapeHtml(scenarioLabels[3])}">-£${vatScenario4.toFixed(2)}</td>
 `;
             
             // Update totals in the ticket income table
@@ -887,6 +1343,10 @@ vatRow.innerHTML = `
             document.getElementById("totalTicketScenario2").textContent = `£${netScenario2.toFixed(2)}`;
             document.getElementById("totalTicketScenario3").textContent = `£${netScenario3.toFixed(2)}`;
             document.getElementById("totalTicketScenario4").textContent = `£${netScenario4.toFixed(2)}`;
+            document.getElementById("totalTicketScenario1").dataset.label = scenarioLabels[0];
+            document.getElementById("totalTicketScenario2").dataset.label = scenarioLabels[1];
+            document.getElementById("totalTicketScenario3").dataset.label = scenarioLabels[2];
+            document.getElementById("totalTicketScenario4").dataset.label = scenarioLabels[3];
             
             // Update summary values
             document.getElementById("summaryGrossTicketScenario1").textContent = `£${grossScenario1.toFixed(2)}`;
@@ -918,10 +1378,10 @@ vatRow.innerHTML = `
             const newRow = incomeTable.insertRow();
             
             newRow.innerHTML = `
-                <td><input type="text" placeholder="e.g. Merchandise"></td>
-                <td><input type="number" value="0.00" step="0.01" min="0"></td>
-                <td><input type="text" placeholder="Additional details"></td>
-                <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+                <td><input type="text" placeholder="e.g. Merchandise" aria-label="Income source"></td>
+                <td><input type="number" value="0.00" step="0.01" min="0" aria-label="Income amount in pounds"></td>
+                <td><input type="text" placeholder="Additional details" aria-label="Income notes"></td>
+                <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete this income source">Delete</button></td>
             `;
         }
         
@@ -955,7 +1415,7 @@ vatRow.innerHTML = `
             
             newRow.innerHTML = `
                 <td>
-                    <select>
+                    <select aria-label="Expense category">
                         <option>Venue</option>
                         <option>Catering</option>
                         <option>Marketing</option>
@@ -967,11 +1427,11 @@ vatRow.innerHTML = `
                         <option>Other</option>
                     </select>
                 </td>
-                <td><input type="text" placeholder="e.g. Security"></td>
-                <td><input type="number" value="0.00" step="0.01" min="0"></td>
-                <td><input type="number" value="0.00" step="0.01" min="0"></td>
-                <td><input type="text" placeholder="Additional details"></td>
-                <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+                <td><input type="text" placeholder="e.g. Security" aria-label="Expense item"></td>
+                <td><input type="number" value="0.00" step="0.01" min="0" aria-label="Fixed amount in pounds"></td>
+                <td><input type="number" value="0.00" step="0.01" min="0" aria-label="Per person amount in pounds"></td>
+                <td><input type="text" placeholder="Additional details" aria-label="Expense notes"></td>
+                <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete this expense">Delete</button></td>
             `;
         }
         
@@ -985,6 +1445,14 @@ vatRow.innerHTML = `
             const scenario2 = parseFloat(document.getElementById("scenario2").value) / 100 || 0.7;
             const scenario3 = parseFloat(document.getElementById("scenario3").value) / 100 || 0.9;
             const scenario4 = parseFloat(document.getElementById("scenario4").value) / 100 || 1.0;
+            
+            // Scenario column labels for mobile's stacked layout (see calculateTicketIncome)
+            const scenarioLabels = [
+                document.getElementById("scenario1Header").textContent,
+                document.getElementById("scenario2Header").textContent,
+                document.getElementById("scenario3Header").textContent,
+                document.getElementById("scenario4Header").textContent
+            ];
             
             // Clear previous calculations
             expenseProjectionTable.innerHTML = "";
@@ -1049,11 +1517,11 @@ vatRow.innerHTML = `
                 // Create a new row in the expense projection table
                 const newRow = expenseProjectionTable.insertRow();
                 newRow.innerHTML = `
-                    <td>${category}</td>
-                    <td>£${scenario1Expense.toFixed(2)}</td>
-                    <td>£${scenario2Expense.toFixed(2)}</td>
-                    <td>£${scenario3Expense.toFixed(2)}</td>
-                    <td>£${scenario4Expense.toFixed(2)}</td>
+                    <td>${escapeHtml(category)}</td>
+                    <td data-label="${escapeHtml(scenarioLabels[0])}">£${scenario1Expense.toFixed(2)}</td>
+                    <td data-label="${escapeHtml(scenarioLabels[1])}">£${scenario2Expense.toFixed(2)}</td>
+                    <td data-label="${escapeHtml(scenarioLabels[2])}">£${scenario3Expense.toFixed(2)}</td>
+                    <td data-label="${escapeHtml(scenarioLabels[3])}">£${scenario4Expense.toFixed(2)}</td>
                 `;
             }
             
@@ -1062,6 +1530,10 @@ vatRow.innerHTML = `
             document.getElementById("totalExpenseScenario2").textContent = `£${totalScenario2.toFixed(2)}`;
             document.getElementById("totalExpenseScenario3").textContent = `£${totalScenario3.toFixed(2)}`;
             document.getElementById("totalExpenseScenario4").textContent = `£${totalScenario4.toFixed(2)}`;
+            document.getElementById("totalExpenseScenario1").dataset.label = scenarioLabels[0];
+            document.getElementById("totalExpenseScenario2").dataset.label = scenarioLabels[1];
+            document.getElementById("totalExpenseScenario3").dataset.label = scenarioLabels[2];
+            document.getElementById("totalExpenseScenario4").dataset.label = scenarioLabels[3];
             
             // Update summary values
             document.getElementById("summaryExpenseScenario1").textContent = `£${totalScenario1.toFixed(2)}`;
@@ -1121,8 +1593,9 @@ vatRow.innerHTML = `
     
     // Account for transaction fees and VAT
     const pricesIncludeVAT = document.getElementById("pricesIncludeVAT").checked;
+    const applyTransactionFee = document.getElementById("applyTransactionFee").checked;
     const VAT_RATE = 0.20; // 20% VAT
-    const TRANSACTION_FEE = 0.20; // 20p per ticket
+    const TRANSACTION_FEE = applyTransactionFee ? 0.20 : 0; // 20p per ticket, opt-in via Settings
     
     // Calculate net revenue per ticket after transaction fee and VAT
     let netPerTicket = avgTicketPrice - TRANSACTION_FEE;
@@ -1174,7 +1647,7 @@ vatRow.innerHTML = `
     // Check against venue capacity
     const maxCapacity = parseFloat(document.getElementById("maxCapacity").value) || 100;
     if (breakEvenTickets > maxCapacity && breakEvenTickets < Infinity) {
-        document.getElementById("breakEvenPoint").innerHTML += " <span style='color: red;'>(Exceeds venue capacity of " + maxCapacity + ")</span>";
+        document.getElementById("breakEvenPoint").innerHTML += " <strong style='color: var(--union-dark);'>(Exceeds venue capacity of " + maxCapacity + ")</strong>";
     }
 }
         
@@ -1214,21 +1687,31 @@ vatRow.innerHTML = `
             document.getElementById("summaryTotalIncomeScenario4").textContent = `£${totalIncomeScenario4.toFixed(2)}`;
             
             // Update profit/loss with colors
-            const profitElement1 = document.getElementById("summaryProfitScenario1");
-            profitElement1.textContent = `£${profitScenario1.toFixed(2)}`;
-            profitElement1.className = profitScenario1 >= 0 ? "positive" : "negative";
-            
-            const profitElement2 = document.getElementById("summaryProfitScenario2");
-            profitElement2.textContent = `£${profitScenario2.toFixed(2)}`;
-            profitElement2.className = profitScenario2 >= 0 ? "positive" : "negative";
-            
-            const profitElement3 = document.getElementById("summaryProfitScenario3");
-            profitElement3.textContent = `£${profitScenario3.toFixed(2)}`;
-            profitElement3.className = profitScenario3 >= 0 ? "positive" : "negative";
-            
-            const profitElement4 = document.getElementById("summaryProfitScenario4");
-            profitElement4.textContent = `£${profitScenario4.toFixed(2)}`;
-            profitElement4.className = profitScenario4 >= 0 ? "positive" : "negative";
+            setProfitCell("summaryProfitScenario1", profitScenario1);
+            setProfitCell("summaryProfitScenario2", profitScenario2);
+            setProfitCell("summaryProfitScenario3", profitScenario3);
+            setProfitCell("summaryProfitScenario4", profitScenario4);
+        }
+        
+        // Renders a profit/loss value with both a color and an icon/text cue,
+        // so the status isn't conveyed by color alone (WCAG 1.4.1).
+        function setProfitCell(elementId, amount) {
+            const el = document.getElementById(elementId);
+            const isProfit = amount >= 0;
+            const badgeClass = isProfit ? "positive" : "negative";
+            el.innerHTML = `<span class="${badgeClass}"><span aria-hidden="true">${isProfit ? '▲' : '▼'}</span> £${amount.toFixed(2)}</span> <span class="sr-only">(${isProfit ? 'profit' : 'loss'})</span>`;
+            // Store the raw number separately: the display text now has an icon and
+            // sr-only wording mixed in, so other code (chart, CSV/PDF export) reads
+            // this instead of re-parsing textContent.
+            el.dataset.value = amount.toFixed(2);
+        }
+        
+        // Reads the plain £-formatted amount for a profit/loss cell, for export
+        // contexts (CSV/PDF) where the icon/sr-only markup isn't appropriate.
+        function getProfitCellText(elementId) {
+            const el = document.getElementById(elementId);
+            const amount = parseFloat(el.dataset.value) || 0;
+            return `£${amount.toFixed(2)} ${amount >= 0 ? '(Profit)' : '(Loss)'}`;
         }
         
         function updateChart() {
@@ -1241,10 +1724,10 @@ vatRow.innerHTML = `
             const scenario4 = document.getElementById("scenario4").value;
             
             // Get profit/loss values
-            const profitScenario1 = parseFloat(document.getElementById("summaryProfitScenario1").textContent.replace('£', '')) || 0;
-            const profitScenario2 = parseFloat(document.getElementById("summaryProfitScenario2").textContent.replace('£', '')) || 0;
-            const profitScenario3 = parseFloat(document.getElementById("summaryProfitScenario3").textContent.replace('£', '')) || 0;
-            const profitScenario4 = parseFloat(document.getElementById("summaryProfitScenario4").textContent.replace('£', '')) || 0;
+            const profitScenario1 = parseFloat(document.getElementById("summaryProfitScenario1").dataset.value) || 0;
+            const profitScenario2 = parseFloat(document.getElementById("summaryProfitScenario2").dataset.value) || 0;
+            const profitScenario3 = parseFloat(document.getElementById("summaryProfitScenario3").dataset.value) || 0;
+            const profitScenario4 = parseFloat(document.getElementById("summaryProfitScenario4").dataset.value) || 0;
             
             // Get income values
             const incomeScenario1 = parseFloat(document.getElementById("summaryTotalIncomeScenario1").textContent.replace('£', '')) || 0;
@@ -1259,11 +1742,11 @@ vatRow.innerHTML = `
             const expenseScenario4 = parseFloat(document.getElementById("summaryExpenseScenario4").textContent.replace('£', '')) || 0;
             
             // Create the chart
-            if (window.summaryChart) {
-                window.summaryChart.destroy();
+            if (window.summaryChartInstance) {
+                window.summaryChartInstance.destroy();
             }
             
-            window.summaryChart = new Chart(ctx, {
+            window.summaryChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: [`${scenario1}% Attendance`, `${scenario2}% Attendance`, `${scenario3}% Attendance`, `${scenario4}% Attendance`],
@@ -1271,15 +1754,15 @@ vatRow.innerHTML = `
                         {
                             label: 'Total Income',
                             data: [incomeScenario1, incomeScenario2, incomeScenario3, incomeScenario4],
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(131, 176, 255, 0.6)', /* Union Blue */
+                            borderColor: 'rgba(131, 176, 255, 1)',
                             borderWidth: 1
                         },
                         {
                             label: 'Total Expenses',
                             data: [expenseScenario1, expenseScenario2, expenseScenario3, expenseScenario4],
-                            backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(243, 109, 33, 0.6)', /* Union Orange */
+                            borderColor: 'rgba(243, 109, 33, 1)',
                             borderWidth: 1
                         },
                         {
@@ -1287,11 +1770,11 @@ vatRow.innerHTML = `
                             data: [profitScenario1, profitScenario2, profitScenario3, profitScenario4],
                             backgroundColor: function(context) {
                                 const value = context.dataset.data[context.dataIndex];
-                                return value >= 0 ? 'rgba(75, 192, 192, 0.5)' : 'rgba(255, 159, 64, 0.5)';
+                                return value >= 0 ? 'rgba(124, 249, 203, 0.7)' /* Union Aqua */ : 'rgba(239, 57, 85, 0.6)' /* Union Red */;
                             },
                             borderColor: function(context) {
                                 const value = context.dataset.data[context.dataIndex];
-                                return value >= 0 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 159, 64, 1)';
+                                return value >= 0 ? 'rgba(124, 249, 203, 1)' : 'rgba(239, 57, 85, 1)';
                             },
                             borderWidth: 1
                         }
@@ -1300,12 +1783,28 @@ vatRow.innerHTML = `
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const formatted = (value < 0 ? '-£' : '£') + Math.abs(value).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                    return context.dataset.label + ': ' + formatted;
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
                             title: {
                                 display: true,
                                 text: 'Amount (£)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return (value < 0 ? '-£' : '£') + Math.abs(value).toLocaleString('en-GB');
+                                }
                             }
                         }
                     }
@@ -1316,7 +1815,13 @@ vatRow.innerHTML = `
         // Utility functions
         function deleteRow(button) {
             const row = button.parentNode.parentNode;
+            const table = row.closest('table');
             row.parentNode.removeChild(row);
+            // deleteRow is shared by the ticket, income and expense tables — only the
+            // ticket table's percentage total needs recalculating after a removal.
+            if (table && table.id === 'ticketTable') {
+                updateTicketAllocationStatus();
+            }
         }
         
         function printSummary() {
@@ -1365,10 +1870,10 @@ vatRow.innerHTML = `
                 document.getElementById("summaryExpenseScenario4").textContent + "\n";
                 
             csvContent += "Net Profit/Loss," + 
-                document.getElementById("summaryProfitScenario1").textContent + "," +
-                document.getElementById("summaryProfitScenario2").textContent + "," +
-                document.getElementById("summaryProfitScenario3").textContent + "," +
-                document.getElementById("summaryProfitScenario4").textContent + "\n";
+                getProfitCellText("summaryProfitScenario1") + "," +
+                getProfitCellText("summaryProfitScenario2") + "," +
+                getProfitCellText("summaryProfitScenario3") + "," +
+                getProfitCellText("summaryProfitScenario4") + "\n";
             
             // Create download link
             const encodedUri = encodeURI(csvContent);
@@ -1381,7 +1886,7 @@ vatRow.innerHTML = `
             link.click();
         }
         
-        // New functions for cookie-based save/load and PDF export
+        // Notification and PDF export helpers
         function showNotification(message) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
@@ -1440,7 +1945,7 @@ vatRow.innerHTML = `
             head: ticketHeaders,
             body: ticketData,
             theme: 'grid',
-            headStyles: { fillColor: [54, 162, 235], textColor: [255, 255, 255] },
+            headStyles: { fillColor: [131, 176, 255], textColor: [11, 32, 39] }, /* Union Blue, dark navy text for contrast */
             styles: { fontSize: 10 }
         });
         
@@ -1472,7 +1977,7 @@ vatRow.innerHTML = `
             head: incomeHeaders,
             body: incomeData,
             theme: 'grid',
-            headStyles: { fillColor: [255, 159, 64], textColor: [255, 255, 255] },
+            headStyles: { fillColor: [243, 109, 33], textColor: [11, 32, 39] }, /* Union Orange, dark navy text for contrast */
             styles: { fontSize: 10 }
         });
         
@@ -1506,7 +2011,7 @@ vatRow.innerHTML = `
             head: expenseHeaders,
             body: expenseData,
             theme: 'grid',
-            headStyles: { fillColor: [255, 99, 132], textColor: [255, 255, 255] },
+            headStyles: { fillColor: [239, 57, 85], textColor: [11, 32, 39] }, /* Union Red, dark navy text for contrast */
             styles: { fontSize: 10 }
         });
         
@@ -1563,10 +2068,10 @@ vatRow.innerHTML = `
                 document.getElementById("summaryExpenseScenario4").textContent
             ],
             ["Net Profit/Loss", 
-                document.getElementById("summaryProfitScenario1").textContent,
-                document.getElementById("summaryProfitScenario2").textContent,
-                document.getElementById("summaryProfitScenario3").textContent,
-                document.getElementById("summaryProfitScenario4").textContent
+                getProfitCellText("summaryProfitScenario1"),
+                getProfitCellText("summaryProfitScenario2"),
+                getProfitCellText("summaryProfitScenario3"),
+                getProfitCellText("summaryProfitScenario4")
             ]
         ];
         
@@ -1576,9 +2081,9 @@ vatRow.innerHTML = `
             head: summaryHeaders,
             body: summaryData,
             theme: 'grid',
-            headStyles: { fillColor: [76, 175, 80], textColor: [255, 255, 255] },
+            headStyles: { fillColor: [215, 251, 89], textColor: [11, 32, 39] }, /* Brilliant Green, dark navy text for contrast */
             styles: { fontSize: 10 },
-            alternateRowStyles: { fillColor: [240, 240, 240] }
+            alternateRowStyles: { fillColor: [255, 255, 255] }
         });
         
         currentY = doc.lastAutoTable.finalY + 10;
@@ -1625,17 +2130,20 @@ function saveToLocalStorage() {
         },
         ticketTypes: getTicketTypesData(),
         includeVAT: document.getElementById("pricesIncludeVAT").checked,
+        applyTransactionFee: document.getElementById("applyTransactionFee").checked,
         otherIncome: getOtherIncomeData(),
         expenses: getExpensesData()
     };
     
     // Save to local storage
-    localStorage.setItem(`eventBudget_${eventName}`, JSON.stringify(budgetData));
-    
-    // Update saved budgets list
-    updateSavedBudgetsList();
-    
-    showNotification(`Budget for "${eventName}" saved successfully!`);
+    try {
+        localStorage.setItem(`eventBudget_${eventName}`, JSON.stringify(budgetData));
+        updateSavedBudgetsList();
+        showNotification(`Budget for "${eventName}" saved successfully!`);
+    } catch (error) {
+        console.error("Error saving budget:", error);
+        showNotification("Error saving budget! Your browser's storage may be full.");
+    }
 }
 
 // Load budget from local storage
@@ -1657,6 +2165,9 @@ function loadFromLocalStorage(eventKey) {
         
         // Load VAT setting
         document.getElementById("pricesIncludeVAT").checked = budgetData.includeVAT;
+        
+        // Load transaction fee setting (defaults to off for budgets saved before this existed)
+        document.getElementById("applyTransactionFee").checked = budgetData.applyTransactionFee || false;
         
         // Load other income
         loadOtherIncome(budgetData.otherIncome);
@@ -1781,10 +2292,10 @@ function loadTicketTypes(ticketTypes) {
     ticketTypes.forEach(ticket => {
         const newRow = ticketTable.insertRow();
         newRow.innerHTML = `
-            <td><input type="text" value="${ticket.name || ''}"></td>
-            <td><input type="number" value="${ticket.price || '0.00'}" step="0.01" min="0"></td>
-            <td><input type="number" value="${ticket.percentage || '0'}" min="0" max="100"></td>
-            <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+            <td><input type="text" value="${escapeHtml(ticket.name || '')}" aria-label="Ticket name"></td>
+            <td><input type="number" value="${escapeHtml(ticket.price || '0.00')}" step="0.01" min="0" aria-label="Ticket price in pounds"></td>
+            <td><input type="number" value="${escapeHtml(ticket.percentage || '0')}" min="0" max="100" aria-label="Expected percentage of attendees"></td>
+            <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete ${escapeHtml(ticket.name || 'this ticket type')}">Delete</button></td>
         `;
     });
     
@@ -1792,6 +2303,11 @@ function loadTicketTypes(ticketTypes) {
     if (ticketTypes.length === 0) {
         addTicketType();
     }
+
+    // The rows above are freshly created DOM nodes with no listeners attached yet —
+    // re-attach so the ticket allocation validation stays live after a load, not
+    // just at the moment the budget was saved.
+    attachTicketAllocationListeners();
 }
 
 // Helper function to load other income
@@ -1805,10 +2321,10 @@ function loadOtherIncome(incomeItems) {
     incomeItems.forEach(income => {
         const newRow = incomeTable.insertRow();
         newRow.innerHTML = `
-            <td><input type="text" value="${income.source || ''}"></td>
-            <td><input type="number" value="${income.amount || '0.00'}" step="0.01" min="0"></td>
-            <td><input type="text" value="${income.notes || ''}"></td>
-            <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+            <td><input type="text" value="${escapeHtml(income.source || '')}" aria-label="Income source"></td>
+            <td><input type="number" value="${escapeHtml(income.amount || '0.00')}" step="0.01" min="0" aria-label="Income amount in pounds"></td>
+            <td><input type="text" value="${escapeHtml(income.notes || '')}" aria-label="Income notes"></td>
+            <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete ${escapeHtml(income.source || 'this income source')}">Delete</button></td>
         `;
     });
     
@@ -1839,15 +2355,15 @@ function loadExpenses(expenses) {
         
         newRow.innerHTML = `
             <td>
-                <select>
+                <select aria-label="Expense category">
                     ${categoryOptions}
                 </select>
             </td>
-            <td><input type="text" value="${expense.item || ''}"></td>
-            <td><input type="number" value="${expense.fixed || '0.00'}" step="0.01" min="0"></td>
-            <td><input type="number" value="${expense.perPerson || '0.00'}" step="0.01" min="0"></td>
-            <td><input type="text" value="${expense.notes || ''}"></td>
-            <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+            <td><input type="text" value="${escapeHtml(expense.item || '')}" aria-label="Expense item"></td>
+            <td><input type="number" value="${escapeHtml(expense.fixed || '0.00')}" step="0.01" min="0" aria-label="Fixed amount in pounds"></td>
+            <td><input type="number" value="${escapeHtml(expense.perPerson || '0.00')}" step="0.01" min="0" aria-label="Per person amount in pounds"></td>
+            <td><input type="text" value="${escapeHtml(expense.notes || '')}" aria-label="Expense notes"></td>
+            <td><button class="delete-btn" onclick="deleteRow(this)" aria-label="Delete ${escapeHtml(expense.item || 'this expense')}">Delete</button></td>
         `;
     });
     
@@ -1859,6 +2375,7 @@ function loadExpenses(expenses) {
 // Initialize dropdown on page load
 document.addEventListener("DOMContentLoaded", function() {
     updateSavedBudgetsList();
+    initTabKeyboardNav();
 });
 // Function to delete a saved budget from local storage
 function deleteSavedBudget(eventKey) {
@@ -1883,6 +2400,13 @@ function deleteSavedBudget(eventKey) {
         showNotification("Error deleting budget!");
     }
 }
+        document.addEventListener('DOMContentLoaded', function() {
+            attachTicketAllocationListeners();
+            updateScenarioColumnLabels();
+            document.querySelectorAll('#scenario1, #scenario2, #scenario3, #scenario4').forEach(input => {
+                input.addEventListener('change', saveEventDetails);
+            });
+        });
     </script>
 </body>
 </html>
