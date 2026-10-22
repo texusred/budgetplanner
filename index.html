@@ -82,96 +82,6 @@
             text-align: center;
             width: 100%;
         }
-        .settings-wrapper {
-            position: absolute;
-            top: 0;
-            right: 0;
-            z-index: 50;
-        }
-        .settings-toggle {
-            background: transparent;
-            color: var(--union-dark);
-            border: 1px solid #ddd;
-            padding: 6px;
-            margin: 0;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .settings-toggle:hover {
-            background: #f0f0f0;
-        }
-        .settings-toggle:focus-visible {
-            outline: 2px solid var(--union-dark);
-            outline-offset: 2px;
-        }
-        .settings-menu {
-            display: none;
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            padding: 16px;
-            min-width: 280px;
-            max-width: calc(100vw - 40px);
-            text-align: left;
-        }
-        .settings-menu.open {
-            display: block;
-        }
-        .settings-menu-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            gap: 12px;
-        }
-        .settings-menu-header h2 {
-            margin: 0;
-            font-size: 1rem;
-        }
-        .settings-close {
-            background: none;
-            border: none;
-            padding: 0;
-            margin: 0;
-            width: 28px;
-            height: 28px;
-            font-size: 1.4rem;
-            line-height: 1;
-            color: var(--union-dark);
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .settings-close:hover {
-            background: #f0f0f0;
-        }
-        .settings-note {
-            margin: 0 0 14px 0;
-            padding: 8px 10px;
-            border-left: 3px solid var(--union-orange);
-            background: #fdf5ee;
-            font-size: 0.85em;
-            color: var(--union-dark);
-        }
-        .settings-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            font-weight: normal;
-            cursor: pointer;
-        }
-        .settings-item + .settings-item {
-            margin-top: 12px;
-        }
-        .settings-item input[type="checkbox"] {
-            margin: 2px 0 0 0;
-            flex-shrink: 0;
-        }
         .card {
             background: #fff;
             border-radius: 5px;
@@ -568,22 +478,6 @@
       <div class="header-container">
         <img src="https://arunion.co.uk/stylesheet/one-union/union-logo-black-cropped.png" alt="Union logo" class="logo">
         <h1>Society Event Budgeting Planner</h1>
-        <div class="settings-wrapper">
-            <button type="button" id="settingsToggle" class="settings-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsMenu" aria-label="Settings" onclick="toggleSettingsMenu(event)">
-                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.03 7.03 0 00-1.63-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 00-.6.22L2.65 8.84a.5.5 0 00.12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 00-.12.64l1.92 3.32c.14.24.42.32.6.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.24.1.47 0 .6-.22l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1112 8.5a3.5 3.5 0 010 7z"/>
-                </svg>
-            </button>
-            <div id="settingsMenu" class="settings-menu" role="dialog" aria-label="Settings" aria-labelledby="settingsMenuHeading" hidden>
-                <div class="settings-menu-header">
-                    <h2 id="settingsMenuHeading">Settings</h2>
-                    <button type="button" class="settings-close" aria-label="Close settings" onclick="closeSettingsMenu()">&times;</button>
-                </div>
-                <p class="settings-note">Only change these settings if a Union staff member has advised you to — this keeps your calculations correct.</p>
-                <label class="settings-item"><input type="checkbox" id="pricesIncludeVAT" checked onchange="onVatSettingChange()"> Ticket prices include VAT (20%)</label>
-                <label class="settings-item"><input type="checkbox" id="applyTransactionFee" onchange="onTransactionFeeSettingChange()"> Transaction fee for non-student ticketed events (20p/ticket)</label>
-            </div>
-        </div>
       </div>
         
         <div class="tabs" role="tablist" aria-label="Event budget sections">
@@ -668,7 +562,7 @@
                 <h2>Ticket Types</h2>
                 <div style="margin-bottom: 15px;">
                     <p style="margin: 0; font-size: 0.9em;">All ticket prices will include VAT set at 20%. Value Added Tax (VAT) is a tax charged on most goods and services, and is collected on behalf of the UK Government, and paid to HM Revenue and Customs (HMRC).</p>
-                    <p style="margin-top: 5px; font-size: 0.9em;">No transaction fees are applied to student-only events. If your event includes non-student attendees, please enable transaction fees through the settings menu.</p>
+                    <p style="margin-top: 5px; font-size: 0.9em;">A transaction fee of 20p per ticket is applied to all ticketed events.</p>
                     <div id="ticketAllocationStatus" class="validation-message" role="status" aria-live="polite"></div>
                 </div>
                 <table id="ticketTable">
@@ -932,7 +826,7 @@
 
                 <div class="card-highlight">
                     <h3>Break-Even Analysis</h3>
-                    <p class="break-even-help">This uses your ticket mix, costs, other income, and your VAT and transaction fee settings.</p>
+                    <p class="break-even-help">This uses your ticket mix, costs, other income, VAT and the 20p per-ticket transaction fee.</p>
                     <div id="breakEvenAnalysis">
                         <p>Based on your fixed costs and per-person variable costs:</p>
                         <p id="breakEvenPoint">You need to sell <strong>0</strong> tickets to break even.</p>
@@ -953,78 +847,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <script>
-        // Settings menu (cog icon in the header)
-        function toggleSettingsMenu(evt) {
-            if (evt) evt.stopPropagation();
-            const menu = document.getElementById("settingsMenu");
-            if (menu.classList.contains("open")) {
-                closeSettingsMenu();
-            } else {
-                openSettingsMenu();
-            }
-        }
-
-        function openSettingsMenu() {
-            const btn = document.getElementById("settingsToggle");
-            const menu = document.getElementById("settingsMenu");
-            menu.classList.add("open");
-            menu.hidden = false;
-            btn.setAttribute("aria-expanded", "true");
-            const firstField = menu.querySelector('input, select') || menu.querySelector('button:not(.settings-close)');
-            if (firstField) firstField.focus();
-            // Close on click outside or Escape. Attached only while open, so we're not
-            // running a global listener for the entire page lifetime. Deferred by a
-            // tick so the click that opened the menu (which may originate from outside
-            // .settings-wrapper, e.g. the "Change in Settings" link) doesn't itself get
-            // treated as an outside click and immediately close what it just opened.
-            setTimeout(() => {
-                document.addEventListener("click", handleSettingsOutsideClick);
-            }, 0);
-            document.addEventListener("keydown", handleSettingsKeydown);
-        }
-
-        function closeSettingsMenu() {
-            const btn = document.getElementById("settingsToggle");
-            const menu = document.getElementById("settingsMenu");
-            if (!menu.classList.contains("open")) return;
-            menu.classList.remove("open");
-            menu.hidden = true;
-            btn.setAttribute("aria-expanded", "false");
-            document.removeEventListener("click", handleSettingsOutsideClick);
-            document.removeEventListener("keydown", handleSettingsKeydown);
-        }
-
-        function handleSettingsOutsideClick(evt) {
-            const wrapper = document.querySelector(".settings-wrapper");
-            if (wrapper && !wrapper.contains(evt.target)) {
-                closeSettingsMenu();
-            }
-        }
-
-        function handleSettingsKeydown(evt) {
-            if (evt.key === "Escape") {
-                closeSettingsMenu();
-                document.getElementById("settingsToggle").focus();
-            }
-        }
-
-        // Recalculates everything that depends on the VAT setting, and refreshes
-        // break-even and the chart too — not just ticket income — since the cog icon
-        // is reachable from every tab and the Summary tab may already be open.
-        function onVatSettingChange() {
-            calculateTicketIncome();
-            calculateExpenses();
-            updateChart();
-        }
-
-        // Same pattern for the transaction fee setting: off by default, opt-in for
-        // events with non-student ticketing where a fee applies.
-        function onTransactionFeeSettingChange() {
-            calculateTicketIncome();
-            calculateExpenses();
-            updateChart();
-        }
-
         // Escapes user-supplied text before it's interpolated into innerHTML strings.
         // Needed anywhere ticket names, income sources, expense items, or notes are
         // re-rendered, since those values round-trip through localStorage and could
@@ -1205,10 +1027,8 @@
             const ticketTable = document.getElementById("ticketTable").getElementsByTagName('tbody')[0];
             const ticketIncomeTable = document.getElementById("ticketIncomeTable").getElementsByTagName('tbody')[0];
             const maxCapacity = parseFloat(document.getElementById("maxCapacity").value) || 100;
-            const pricesIncludeVAT = document.getElementById("pricesIncludeVAT").checked;
-            const applyTransactionFee = document.getElementById("applyTransactionFee").checked;
             const VAT_RATE = 0.20; // 20% VAT
-            const TRANSACTION_FEE = applyTransactionFee ? 0.20 : 0; // 20p per ticket, opt-in via Settings
+            const TRANSACTION_FEE = 0.20; // 20p per ticket, always applied
             
             // Get scenario percentages
             const scenario1 = parseFloat(document.getElementById("scenario1").value) / 100 || 0.5;
@@ -1294,22 +1114,11 @@ const afterTransactionFee2 = grossScenario2 - transactionFeeScenario2;
 const afterTransactionFee3 = grossScenario3 - transactionFeeScenario3;
 const afterTransactionFee4 = grossScenario4 - transactionFeeScenario4;
 
-// Calculate VAT on remaining amount
-let vatScenario1, vatScenario2, vatScenario3, vatScenario4;
-
-if (pricesIncludeVAT) {
-    // If prices include VAT, calculate the VAT portion
-    vatScenario1 = afterTransactionFee1 * VAT_RATE / (1 + VAT_RATE);
-    vatScenario2 = afterTransactionFee2 * VAT_RATE / (1 + VAT_RATE);
-    vatScenario3 = afterTransactionFee3 * VAT_RATE / (1 + VAT_RATE);
-    vatScenario4 = afterTransactionFee4 * VAT_RATE / (1 + VAT_RATE);
-} else {
-    // If prices exclude VAT, add it on top
-    vatScenario1 = afterTransactionFee1 * VAT_RATE;
-    vatScenario2 = afterTransactionFee2 * VAT_RATE;
-    vatScenario3 = afterTransactionFee3 * VAT_RATE;
-    vatScenario4 = afterTransactionFee4 * VAT_RATE;
-}
+// Ticket prices always include VAT, so extract the VAT portion of what remains
+const vatScenario1 = afterTransactionFee1 * VAT_RATE / (1 + VAT_RATE);
+const vatScenario2 = afterTransactionFee2 * VAT_RATE / (1 + VAT_RATE);
+const vatScenario3 = afterTransactionFee3 * VAT_RATE / (1 + VAT_RATE);
+const vatScenario4 = afterTransactionFee4 * VAT_RATE / (1 + VAT_RATE);
 
 // Calculate net ticket income (after transaction fees and VAT)
 const netScenario1 = afterTransactionFee1 - vatScenario1;
@@ -1318,7 +1127,7 @@ const netScenario3 = afterTransactionFee3 - vatScenario3;
 const netScenario4 = afterTransactionFee4 - vatScenario4;
             
             // Add VAT and transaction fee rows to the ticket income table
-const transactionFeeLabel = applyTransactionFee ? "Less Transaction Fees (20p/ticket)" : "Less Transaction Fees (not applied)";
+const transactionFeeLabel = "Less Transaction Fees (20p/ticket)";
 const transactionRow = ticketIncomeTable.insertRow();
 transactionRow.innerHTML = `
     <td><strong>${transactionFeeLabel}</strong></td>
@@ -1592,18 +1401,14 @@ vatRow.innerHTML = `
     const avgTicketPrice = totalTicketPercentage > 0 ? totalTicketPrice / totalTicketPercentage : 0;
     
     // Account for transaction fees and VAT
-    const pricesIncludeVAT = document.getElementById("pricesIncludeVAT").checked;
-    const applyTransactionFee = document.getElementById("applyTransactionFee").checked;
     const VAT_RATE = 0.20; // 20% VAT
-    const TRANSACTION_FEE = applyTransactionFee ? 0.20 : 0; // 20p per ticket, opt-in via Settings
+    const TRANSACTION_FEE = 0.20; // 20p per ticket, always applied
     
     // Calculate net revenue per ticket after transaction fee and VAT
     let netPerTicket = avgTicketPrice - TRANSACTION_FEE;
     
-    if (pricesIncludeVAT) {
-        const vatAmount = netPerTicket * VAT_RATE / (1 + VAT_RATE);
-        netPerTicket = netPerTicket - vatAmount;
-    }
+    // Ticket prices always include VAT
+    netPerTicket = netPerTicket - (netPerTicket * VAT_RATE / (1 + VAT_RATE));
     
     // Calculate contribution margin
     const contributionMargin = netPerTicket - variableCostPerPerson;
@@ -2129,8 +1934,6 @@ function saveToLocalStorage() {
             scenario4: document.getElementById("scenario4").value
         },
         ticketTypes: getTicketTypesData(),
-        includeVAT: document.getElementById("pricesIncludeVAT").checked,
-        applyTransactionFee: document.getElementById("applyTransactionFee").checked,
         otherIncome: getOtherIncomeData(),
         expenses: getExpensesData()
     };
@@ -2162,12 +1965,6 @@ function loadFromLocalStorage(eventKey) {
         
         // Load ticket types
         loadTicketTypes(budgetData.ticketTypes);
-        
-        // Load VAT setting
-        document.getElementById("pricesIncludeVAT").checked = budgetData.includeVAT;
-        
-        // Load transaction fee setting (defaults to off for budgets saved before this existed)
-        document.getElementById("applyTransactionFee").checked = budgetData.applyTransactionFee || false;
         
         // Load other income
         loadOtherIncome(budgetData.otherIncome);
